@@ -14,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'humans', 'cats', 'homes', 'breeds']
 
-class CatSerializer(serializers.HyperlinkedModelSerializer):
+class CatSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Cat
 		user = serializers.ReadOnlyField(source = 'user.username')
@@ -22,14 +22,14 @@ class CatSerializer(serializers.HyperlinkedModelSerializer):
 		fields = ('ID', 'user', 'name', 'gender', 'date_of_birth', 'description', 'breed', 'owner' ,'home',)
 
 
-class BreedSerializer(serializers.HyperlinkedModelSerializer):
+class BreedSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Breed
 		user = serializers.ReadOnlyField(source='user.username')
-		homes = CatSerializer(source='cat_set', many = True)
+		cats = CatSerializer(read_only = True, many = True)
 		fields = ['ID', 'user','name', 'origin', 'description', 'homes', 'cats', 'homes']
 
-class HumanSerializer(serializers.HyperlinkedModelSerializer):
+class HumanSerializer(serializers.ModelSerializer):
 	class Meta:
 		user = serializers.ReadOnlyField(source='user.username')
 		model = Human
@@ -39,5 +39,6 @@ class HumanSerializer(serializers.HyperlinkedModelSerializer):
 class HomeSerializer(serializers.ModelSerializer):
 	class Meta:
 		user = serializers.ReadOnlyField(source='user.username')
+		humans = HumanSerializer(read_only = True, many = True)
 		model = Home
 		fields = ['ID', 'user', 'name', 'address', 'home_type']
