@@ -21,13 +21,13 @@ class Cat(TimeStampedModel):
 	"""
 	The model that contains the cat's information
 	"""
-	
-	user = models.ForeignKey('auth.User', related_name='cats', on_delete=models.CASCADE)
+
 	gender = models.CharField(max_length = 10)
 	date_of_birth = models.DateTimeField()
 	description = models.TextField()
 	breed = models.ForeignKey('Breed', on_delete= models.CASCADE, related_name='cats')
 	owner = models.ForeignKey('Human', on_delete= models.CASCADE, related_name='cats')
+	user = models.ForeignKey('auth.User', related_name='cats', on_delete=models.CASCADE)
 
 class Breed(TimeStampedModel):
 	"""
@@ -37,7 +37,6 @@ class Breed(TimeStampedModel):
 	user = models.ForeignKey('auth.User', related_name='breeds', on_delete=models.CASCADE)
 	origin = models.CharField(max_length = 50)
 	description = models.TextField()
-	#cats = models.ForeignKey(Cat, related_name='breed', on_delete = models.CASCADE
 	
 	def __str__(self):
 		return self.name

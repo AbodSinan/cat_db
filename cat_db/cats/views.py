@@ -42,9 +42,6 @@ class CatViewSet(viewsets.ModelViewSet):
 	queryset = Cat.objects.all()
 	serializer_class = CatSerializer
 
-	def perform_create(self, serializer):
-		serializer.save(owner=self.request.user)
-
 class BreedViewSet(viewsets.ModelViewSet):
 	"""
 	View to show list of Breed using generic API
@@ -53,9 +50,6 @@ class BreedViewSet(viewsets.ModelViewSet):
 	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 	queryset = Breed.objects.all()
 	serializer_class = BreedSerializer
-
-	def perform_create(self, serializer):
-		serializer.save(owner=self.request.user)
 
 class HomeViewSet(viewsets.ModelViewSet):
 	"""
@@ -66,9 +60,6 @@ class HomeViewSet(viewsets.ModelViewSet):
 	queryset = Home.objects.all()
 	serializer_class = HomeSerializer
 
-	def perform_create(self, serializer):
-		serializer.save(owner=self.request.user)
-
 class HumanViewSet(viewsets.ModelViewSet):
 	"""
 	View to show list of Human using generic API
@@ -77,6 +68,3 @@ class HumanViewSet(viewsets.ModelViewSet):
 	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 	queryset = Human.objects.all()
 	serializer_class = HumanSerializer
-
-	def perform_create(self, serializer):
-		serializer.save(owner=self.request.user)
