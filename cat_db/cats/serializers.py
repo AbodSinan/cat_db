@@ -36,7 +36,7 @@ class BreedSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Breed
 		user = serializers.ReadOnlyField(source='user.username')
-		fields = ['ID', 'user','name', 'origin', 'description', 'cats', 'homes']
+		fields = ['ID', 'user','name', 'origin', 'description','homes', 'cats']
 
 class HumanSerializer(serializers.ModelSerializer):
 	cats = CatSerializer(read_only=True, many=True)
