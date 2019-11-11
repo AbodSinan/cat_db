@@ -1,3 +1,5 @@
+import faker, factory
+
 from django.contrib.auth.models import User, AnonymousUser
 
 from rest_framework.authtoken.models import Token
@@ -5,6 +7,7 @@ from rest_framework.test import APITestCase, APIRequestFactory, force_authentica
 
 from cats.views import BreedViewSet, CatViewSet, HomeViewSet, HumanViewSet
 from cats.models import Cat, Breed
+from cats.factories import HomeWithHumans, BreedWithCats, CatFactory, HumanWithCats
 
 
 class UnauthorizedAccessTest(APITestCase):
@@ -45,6 +48,7 @@ class CRETViewTests(APITestCase):
     def setUp(self):
         self.factory = APIRequestFactory
         self.user = User.objects.get('admin')
+        self.unauth_user = AnonymousUser()
 
         self.breed_data = {
             'ID' : 1,
@@ -65,12 +69,12 @@ class CRETViewTests(APITestCase):
         request = self.factory.post('/breeds/', data=self.breed_data)
         force_authenticate(request, user = self.user)
         response = view(request)
-        self.assertEqual(response.data['description', ])
+        self.assertEqual(response.data['description'], 'a book')
 
     def test_breed_retrieve(self):
         view = BreedViewSet.as_view()
         request = self.factory.get('/breeds/')
-        force_authenticate(request, user=self.user)
+        request.user = self.unauth_user
         response = view(request)
         self.assertEqual(response.data['description'], 'a book')
 
@@ -80,3 +84,9 @@ class CRETViewTests(APITestCase):
         force_authenticate(request, user = self.user)
         response = view(request)
         self.assertEqual(response.data['origin'], 'eastasia')
+
+    def test_breed_delete(self):
+        view = BreedViewSet.as_view()
+        request = self.factory.post('/breeds/', data=self.breed_data_new)
+        force_authenticate(request, user = self.user)
+        response = view(request)

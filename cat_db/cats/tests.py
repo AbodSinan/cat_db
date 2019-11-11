@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIRequestFactory, APIClient, RequestsClient
 from rest_framework.authtoken.models import Token
 
+from cats.factories import HumanFactory, HomeFactory, BreedFactory, CatFactory
 from cats.serializers import HomeSerializer 
 from cats.models import Home
 
