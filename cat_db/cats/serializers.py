@@ -15,28 +15,32 @@ class UserSerializer(serializers.ModelSerializer):
 
 class CatSerializer(serializers.ModelSerializer):
 	home = serializers.ReadOnlyField(source = 'owner.home.name')
+	user = serializers.ReadOnlyField(source = 'user.username')
 
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
 	
 	class Meta:
 		model = Cat
-		user = serializers.ReadOnlyField(source = 'user.username')
 		fields = ['ID', 'user', 'name', 'gender', 'date_of_birth', 'description', 'breed', 'owner', 'home']
 
+class HomeListingField(serializers.RelatedField):
+	def to_native(self, value):
+		return(value.name)
 
 class BreedSerializer(serializers.ModelSerializer):
 	cats = CatSerializer(read_only = True, many = True)
-	homes = serializers.ReadOnlyField(source='cats.owner.home.name')
-	
+	#homes = HomeListingField(many = True, read_only = True)
+	#homes = ReadOnlyField(source='cats.home')
+	#homes = serializers.PrimaryKeyRelatedField(many = True, queryset = )
 
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
 	
 	class Meta:
-		model = Breed
 		user = serializers.ReadOnlyField(source='user.username')
-		fields = ['ID', 'user','name', 'origin', 'description','homes', 'cats']
+		model = Breed
+		fields = ['ID', 'user','name', 'origin', 'description', 'homes', 'cats']
 
 class HumanSerializer(serializers.ModelSerializer):
 	cats = CatSerializer(read_only=True, many=True)
@@ -45,8 +49,8 @@ class HumanSerializer(serializers.ModelSerializer):
 		serializer.save(user=self.request.user)
 
 	class Meta:
-		user = serializers.ReadOnlyField(source='user.username')
 		model = Human
+		user = serializers.ReadOnlyField(source='user.username')
 		fields = ['ID', 'user', 'name', 'gender', 'date_of_birth', 'description', 'home', 'cats']
 
 class HomeSerializer(serializers.ModelSerializer):

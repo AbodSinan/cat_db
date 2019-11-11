@@ -44,5 +44,4 @@ class TestHomeModel(APITestCase):
 
     def test_can_retrieve(self):
         self.retrieved = self.serializer.get(pk=1)
-        assertEqual(self.retrieved.data['description'], self.breed_data['description'])
-            
+        self.assertEqual(self.retrieved.data['description'], self.breed_data['description'])
