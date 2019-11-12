@@ -39,6 +39,7 @@ class BreedFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('name')
     ID = factory.Faker('pyint')
     origin = factory.Faker('pystr')
+    description = factory.Faker('text')
 
     class Meta:
         model = Breed
