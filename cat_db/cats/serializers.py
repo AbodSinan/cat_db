@@ -15,32 +15,40 @@ class UserSerializer(serializers.ModelSerializer):
 
 class CatSerializer(serializers.ModelSerializer):
 	home = serializers.ReadOnlyField(source = 'owner.home.name')
-	user = serializers.ReadOnlyField(source = 'user.username')
 
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
 	
 	class Meta:
 		model = Cat
+		user = serializers.ReadOnlyField(source = 'user.username')
 		fields = ['ID', 'user', 'name', 'gender', 'date_of_birth', 'description', 'breed', 'owner', 'home']
 
 class HomeListingField(serializers.RelatedField):
 	def to_native(self, value):
-		return(value.name)
+		return value.home 
 
 class BreedSerializer(serializers.ModelSerializer):
 	cats = CatSerializer(read_only = True, many = True)
 	#homes = HomeListingField(many = True, read_only = True)
-	#homes = ReadOnlyField(source='cats.home')
-	#homes = serializers.PrimaryKeyRelatedField(many = True, queryset = )
+	#homes = serializers.ReadOnlyField(source='cats.home')
+	#homes = serializers.PrimaryKeyRelatedField(many = True, queryset = cats)
+	#homes = serializers.CharField(source='cats.home', read_only=True, many=True) ##many is not included
+	homes = serializers.SlugRelatedField(source = 'cats', slug_field='name',many=True, read_only=True)
 
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
 	
 	class Meta:
 		user = serializers.ReadOnlyField(source='user.username')
+		fields = ['ID', 'user','name', 'origin', 'description', 'cats', 'homes',]
 		model = Breed
-		fields = ['ID', 'user','name', 'origin', 'description', 'homes', 'cats']
+
+	"""def to_representation(self, instance):
+		data = super(BreedSerializer, self).to_representation(instance)
+		data['homes'] = CatSerializer(instance.cats.home, many=True).data
+		return data"""
+		
 
 class HumanSerializer(serializers.ModelSerializer):
 	cats = CatSerializer(read_only=True, many=True)
