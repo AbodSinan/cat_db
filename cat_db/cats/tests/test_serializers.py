@@ -1,3 +1,5 @@
+from faker import Faker
+
 from django.contrib.auth.models import User
 
 from rest_framework import serializers
@@ -5,8 +7,12 @@ from rest_framework.test import APITestCase, APIClient
 
 from cats.models import Cat, Home, Breed, Human
 from cats.serializers import BreedSerializer
+from cats.factories import HumanWithCats, BreedFactory, HumanFactory, CatFactory, HomeFactory
 
 class TestHomeModel(APITestCase):
+    """
+    Defines tests for the Home Model
+    """
     def setUp(self):
         self.client = APITestCase
         self.client.create_superuser('admin', 'admin@example', 'testing321')
