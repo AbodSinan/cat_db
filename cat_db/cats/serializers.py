@@ -34,7 +34,15 @@ class BreedSerializer(serializers.ModelSerializer):
 	#homes = serializers.ReadOnlyField(source='cats.home')
 	#homes = serializers.PrimaryKeyRelatedField(many = True, queryset = cats)
 	#homes = serializers.CharField(source='cats.home', read_only=True, many=True) ##many is not included
-	homes = serializers.SlugRelatedField(source = 'cats', slug_field='name',many=True, read_only=True)
+	#homes = serializers.SlugRelatedField(source = 'cats.all', slug_field='home',many=True, read_only=True)
+	homes = serializers.SerializerMethodField()
+
+	def get_homes(self, instance):
+		homes = []
+		cat_instances =  instance.cats.all()
+		for cat in cat_instances:
+			homes.append(cat.owner.home.name)
+		return homes
 
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
@@ -46,7 +54,7 @@ class BreedSerializer(serializers.ModelSerializer):
 
 	"""def to_representation(self, instance):
 		data = super(BreedSerializer, self).to_representation(instance)
-		data['homes'] = CatSerializer(instance.cats.home, many=True).data
+		data.homes = CatSerializer(instance.cats.home, many=True).data
 		return data"""
 		
 

@@ -29,24 +29,25 @@ class UnauthorizedAccessTest(APITestCase):
         self.breed_new = BreedFactory(user = self.user)
         self.serial = BreedSerializer(instance = self.breed)
         self.serial_new = BreedSerializer(instance = self.breed_new)
-        self.token= Token.objects.get_or_create(user=self.user)
+        self.token,_ = Token.objects.get_or_create(user=self.user)
 
     def test_auth_get(self):
-        request = self.factory.get('/cats/', self.serial.data, HTTP_AUTHORIZATION='Token {}'.format(self.token))
+        request = self.factory.get('/cats/', HTTP_AUTHORIZATION='Token {}'.format(self.token))
         view = CatViewSet.as_view({'get' : 'list'})
         response = view(request)
         self.assertEqual(response.status_code, 200)
 
+    #TODO:'NoneType' object has no attribute 'split', PROBABLY DUE TO THE HTTP AUTHORIZATION
     def test_unauth_post(self):
         request = self.client.post('/breeds/', self.serial.data, HTTP_AUTHORIZATION=None)
-        view = CatViewSet.as_view({'post' : 'create'})
-        response = view(request)
+        view = BreedViewSet.as_view({'post' : 'create'})
+        response = view(request, user=self.unauth_user)
         self.assertEqual(response.status_code, 401)
-
+    #TODO: 'NoneType' object has no attribute 'split'
     def test_auth_post(self):
         request = self.client.post('/breeds/', self.serial.data, HTTP_AUTHORIZATION=self.token)
-        view = CatViewSet.as_view({'post' : 'create'})
-        response = view(request)
+        view = BreedViewSet.as_view({'post' : 'create'})
+        response = view(request, user=self.user)
         self.assertEqual(response.status_code, 200)
 
 class CRETViewTests(APITestCase):
