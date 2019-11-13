@@ -1,7 +1,7 @@
 import factory
 from faker import Faker
 
-from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.auth.models import AnonymousUser, User
 
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIRequestFactory, force_authenticate, APIClient
@@ -24,28 +24,36 @@ class UnauthorizedAccessTest(APITestCase):
         password = fake.pystr()
         self.factory = APIRequestFactory()
         self.user = User.objects.create_user(name, email, password)
-        self.unauth_user = AnonymousUser()
         self.breed = BreedFactory(user=self.user)
         self.breed_new = BreedFactory(user = self.user)
         self.serial = BreedSerializer(instance = self.breed)
         self.serial_new = BreedSerializer(instance = self.breed_new)
-        self.token,_ = Token.objects.get_or_create(user=self.user)
+        self.token = Token.objects.create(user=self.user)
+        self.token.save()
 
     def test_auth_get(self):
         request = self.factory.get('/cats/', HTTP_AUTHORIZATION='Token {}'.format(self.token))
+        request.user = self.user
+        view = CatViewSet.as_view({'get' : 'list'})
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+
+    def test_unauth_get(self):
+        request = self.factory.get('/cats/', HTTP_AUTHORIZATION=None)
+        request.user = self.user
         view = CatViewSet.as_view({'get' : 'list'})
         response = view(request)
         self.assertEqual(response.status_code, 200)
 
     #TODO:'NoneType' object has no attribute 'split', PROBABLY DUE TO THE HTTP AUTHORIZATION
     def test_unauth_post(self):
-        request = self.client.post('/breeds/', self.serial.data, HTTP_AUTHORIZATION=None)
+        request = self.factory.post('/breeds/', self.serial.data)
         view = BreedViewSet.as_view({'post' : 'create'})
         response = view(request, user=self.unauth_user)
         self.assertEqual(response.status_code, 401)
     #TODO: 'NoneType' object has no attribute 'split'
     def test_auth_post(self):
-        request = self.client.post('/breeds/', self.serial.data, HTTP_AUTHORIZATION=self.token)
+        request = self.factory.post('/breeds/', self.serial.data)
         view = BreedViewSet.as_view({'post' : 'create'})
         response = view(request, user=self.user)
         self.assertEqual(response.status_code, 200)
