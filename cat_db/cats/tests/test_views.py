@@ -3,6 +3,7 @@ from faker import Faker
 
 from django.contrib.auth.models import AnonymousUser, User
 
+from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIRequestFactory, force_authenticate, APIClient
 
@@ -23,13 +24,19 @@ class UnauthorizedAccessTest(APITestCase):
         email = fake.email()
         password = fake.pystr()
         self.factory = APIRequestFactory()
-        self.user = User.objects.create_user(name, email, password)
+        self.user = User.objects.create_user(name, email, password) #no need to define token, since the process is automated on object creation in models.py
+        request = factory.post('/api-auth-token/', {'username' : self.user.username, 'password' : self.user.password})
+        request.user = user
+        response = obtain_auth_token(request)
+        #TODO: figure out how to convert this token into a Token object
+        token_key  = response.data['token']
+        self.unauth_user = AnonymousUser()
         self.breed = BreedFactory(user=self.user)
         self.breed_new = BreedFactory(user = self.user)
         self.serial = BreedSerializer(instance = self.breed)
         self.serial_new = BreedSerializer(instance = self.breed_new)
-        self.token = Token.objects.create(user=self.user)
-        self.token.save()
+        self.token = Token.objects.get(user=self.user)
+
 
     def test_auth_get(self):
         request = self.factory.get('/cats/', HTTP_AUTHORIZATION='Token {}'.format(self.token))
@@ -39,8 +46,8 @@ class UnauthorizedAccessTest(APITestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_unauth_get(self):
-        request = self.factory.get('/cats/', HTTP_AUTHORIZATION=None)
-        request.user = self.user
+        request = self.factory.get('/cats/')
+        request.user = self.unauth_user
         view = CatViewSet.as_view({'get' : 'list'})
         response = view(request)
         self.assertEqual(response.status_code, 200)
@@ -48,14 +55,16 @@ class UnauthorizedAccessTest(APITestCase):
     #TODO:'NoneType' object has no attribute 'split', PROBABLY DUE TO THE HTTP AUTHORIZATION
     def test_unauth_post(self):
         request = self.factory.post('/breeds/', self.serial.data)
+        request.user = self.unauth_user
         view = BreedViewSet.as_view({'post' : 'create'})
-        response = view(request, user=self.unauth_user)
+        response = view(request)
         self.assertEqual(response.status_code, 401)
     #TODO: 'NoneType' object has no attribute 'split'
     def test_auth_post(self):
-        request = self.factory.post('/breeds/', self.serial.data)
+        request = self.factory.post('/breeds/', self.serial.data, HTTP_AUTHORIZATION='Token {}'.format(self.token))
+        request.user = self.user
         view = BreedViewSet.as_view({'post' : 'create'})
-        response = view(request, user=self.user)
+        response = view(request, user = self.user, token = self.token)
         self.assertEqual(response.status_code, 200)
 
 class CRETViewTests(APITestCase):
@@ -70,6 +79,7 @@ class CRETViewTests(APITestCase):
         password = fake.pystr()
         self.factory = APIRequestFactory()
         self.user = User.objects.create_user(name, email, password)
+        self.token = Token.objects.get(user=self.user)
         self.unauth_user = AnonymousUser()
         self.breed = BreedFactory()
         self.breed_new = BreedFactory()
@@ -79,18 +89,32 @@ class CRETViewTests(APITestCase):
     def test_breed_getList(self):
         view = BreedViewSet.as_view({'get': 'list'})
         request = self.factory.get('/breeds/')
-        force_authenticate(request, user = self.breed.user)
+        force_authenticate(request, user = self.user)
         response = view(request)
         self.assertEqual(response.status_code, 200)
 
     def test_breed_post(self):
         view = BreedViewSet.as_view({'post': 'create'})
-        request = self.factory.post('/breeds/', self.serial.data    )
-        force_authenticate(request, user = self.breed.user)
+        request = self.factory.post('/breeds/', {'user': self.user, 'name': 'Alexander Turner', 
+                                    'origin': 'gUkHwJHaLPUiaQLyDNVu', 'description': 'Indicate camera last raise fill'}, HTTP_AUTHORIZATION='Token {}'.format(self.token))
+        force_authenticate(request, user = self.user, token = self.token)
         response = view(request)
         self.assertEqual(response.status_code, 200)
 
-    def test_breed_retrieve(self):
+    def test_breed_retrieve_auth(self):
+        """
+        test whether an authenticated user can retrieve
+        """
+        view = BreedViewSet.as_view({'get': 'retrieve'})
+        request = self.factory.get('/breeds/')
+        request.user = self.user
+        response = view(request, pk=self.breed.ID)
+        self.assertEqual(response.status_code, 200)
+
+    def test_breed_retrieve_unauth(self):
+        """
+        test whether an unauthenticated user can retrieve
+        """
         view = BreedViewSet.as_view({'get': 'retrieve'})
         request = self.factory.get('/breeds/')
         request.user = self.unauth_user

@@ -21,11 +21,6 @@ def api_root(request, format=None):
         'breeds': reverse('breed-list', request=request, format=format),
     })
 
-class UserRegistration(UserCreationForm):
-	class Meta:
-		model = User
-		fields = ['username', 'email']
-
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
 	"""
 	a Viewset to create and track users

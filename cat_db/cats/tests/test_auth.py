@@ -17,13 +17,11 @@ class TestAuth(APITestCase):
             username = 'test',
             email='testuser@test.com',
             password='test')
-        self.token = Token.objects.create(user = self.user)
-        self.token.save()
 
     def test_list(self):
         request = self.factory.get(self.uri,
-           HTTP_AUTHORIZATION='Token {}'.format(self.token.key))
-        #request = self.factory.get(self.uri, HTTP_AUTHORIZATION=None)
+           HTTP_AUTHORIZATION='Token {}'.format(Token.objects.get(user = self.user)))
+        request = self.factory.get(self.uri, HTTP_AUTHORIZATION=None)
         request.user = self.user
         force_authenticate(request, self.user)
         response = self.view(request)
