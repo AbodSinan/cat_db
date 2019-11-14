@@ -24,6 +24,10 @@ class UserSerializer(serializers.ModelSerializer):
 		user.save()
 		return user
 
+class UserSigninSerializer(serializers.Serializer):
+	username = serializers.CharField(required = True)
+	password = serializers.CharField(required = True)
+
 class CatSerializer(serializers.ModelSerializer):
 	home = serializers.ReadOnlyField(source = 'owner.home.name')
 

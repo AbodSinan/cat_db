@@ -4,11 +4,13 @@ from django.conf import settings
 
 from rest_framework.authtoken import views as auth_views
 
+from cats import views
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('cats.urls')),
-    path('api-auth-token/', auth_views.obtain_auth_token, name='api-token-auth'),
+    path('api-auth-token/', views.signin, name='api-token-auth'),
 ]
 
 if settings.DEBUG:

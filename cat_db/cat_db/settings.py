@@ -75,12 +75,14 @@ TEMPLATES = [
 WSGI_APPLICATION = 'cat_db.wsgi.application'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES' : (
+    'DEFAULT_AUTHENTICATION_CLASSES' : (
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
+        'cats.authentication.ExpiringTokenAuthentication',
     ),
 }
 
+# Determines the period for which the token is valid
+TOKEN_EXPIRED_AFTER_SECONDS = 86400
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
