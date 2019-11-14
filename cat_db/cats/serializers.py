@@ -4,14 +4,25 @@ from rest_framework import serializers
 
 
 class UserSerializer(serializers.ModelSerializer):
-    humans = serializers.PrimaryKeyRelatedField(many=True, queryset=Human.objects.all())
-    cats = serializers.PrimaryKeyRelatedField(many=True, queryset=Cat.objects.all())
-    homes = serializers.PrimaryKeyRelatedField(many=True, queryset=Home.objects.all())
-    breeds = serializers.PrimaryKeyRelatedField(many=True, queryset=Breed.objects.all())
+	humans = serializers.PrimaryKeyRelatedField(many=True, queryset=Human.objects.all())
+	cats = serializers.PrimaryKeyRelatedField(many=True, queryset=Cat.objects.all())
+	homes = serializers.PrimaryKeyRelatedField(many=True, queryset=Home.objects.all())
+	breeds = serializers.PrimaryKeyRelatedField(many=True, queryset=Breed.objects.all())
 
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'humans', 'cats', 'homes', 'breeds']
+	class Meta:
+		model = User
+		fields = ['id', 'username','password', 'humans', 'cats', 'homes', 'breeds']
+		extra_kwargs = {'password' : {'write_only' : True}}
+		
+
+	def create(self,validated_data):
+		user = User(
+			email = validated_data['email'],
+			username = validated_data['username']
+		)
+		user.set_password(validated_data['password'])
+		user.save()
+		return user
 
 class CatSerializer(serializers.ModelSerializer):
 	home = serializers.ReadOnlyField(source = 'owner.home.name')

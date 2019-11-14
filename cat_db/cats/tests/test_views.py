@@ -1,11 +1,13 @@
 import factory
 from faker import Faker
+import coreapi
 
 from django.contrib.auth.models import AnonymousUser, User
 
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.authtoken.models import Token
-from rest_framework.test import APITestCase, APIRequestFactory, force_authenticate, APIClient
+from rest_framework.test import APITestCase, APIRequestFactory, force_authenticate
 
 from cats.views import BreedViewSet, CatViewSet, HomeViewSet, HumanViewSet
 from cats.models import Cat, Breed
@@ -24,18 +26,23 @@ class UnauthorizedAccessTest(APITestCase):
         email = fake.email()
         password = fake.pystr()
         self.factory = APIRequestFactory()
-        self.user = User.objects.create_user(name, email, password) #no need to define token, since the process is automated on object creation in models.py
-        request = factory.post('/api-auth-token/', {'username' : self.user.username, 'password' : self.user.password})
-        request.user = user
-        response = obtain_auth_token(request)
+        self.user = User.objects.create_superuser(name, email, password) #no need to define token, since the process is automated on object creation in models.py
+        #self.client.auth = TokenAuthentication()
+        self.client.login(username = name, password = password)
+        print(self.client.isstaff)
+        response = self.client.post('/api-auth-token/', {'username' : self.user.username, 'password' : self.user.password}, format='json')
+        #request.user = self.user
+        #force_authenticate(request, user=self.user)
+        #response = obtain_auth_token(request)
+        self.access_token = response.json()
         #TODO: figure out how to convert this token into a Token object
-        token_key  = response.data['token']
+        print(response.data)
         self.unauth_user = AnonymousUser()
         self.breed = BreedFactory(user=self.user)
         self.breed_new = BreedFactory(user = self.user)
         self.serial = BreedSerializer(instance = self.breed)
         self.serial_new = BreedSerializer(instance = self.breed_new)
-        self.token = Token.objects.get(user=self.user)
+        self.token = Token.objects.get(user=self.user, key=self.access_token)
 
 
     def test_auth_get(self):
@@ -54,7 +61,7 @@ class UnauthorizedAccessTest(APITestCase):
 
     #TODO:'NoneType' object has no attribute 'split', PROBABLY DUE TO THE HTTP AUTHORIZATION
     def test_unauth_post(self):
-        request = self.factory.post('/breeds/', self.serial.data)
+        request = self.factory.post('/breeds/', self.serial.data, HTTP_AUTHORIZATION='Token {}'.format(self.token))
         request.user = self.unauth_user
         view = BreedViewSet.as_view({'post' : 'create'})
         response = view(request)

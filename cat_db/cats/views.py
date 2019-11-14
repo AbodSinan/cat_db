@@ -35,7 +35,6 @@ class CatViewSet(viewsets.ModelViewSet):
 	View to show list of Cats using generic API
 	"""
 
-	authentication_classes = [TokenAuthentication,]
 	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 	queryset = Cat.objects.all()
 	serializer_class = CatSerializer
@@ -45,7 +44,6 @@ class BreedViewSet(viewsets.ModelViewSet):
 	View to show list of Breed using generic API
 	"""
 
-	authentication_classes = [TokenAuthentication,]
 	permission_classes = [permissions.IsAuthenticatedOrReadOnly,]
 	queryset = Breed.objects.all()
 	serializer_class = BreedSerializer
@@ -55,7 +53,6 @@ class HomeViewSet(viewsets.ModelViewSet):
 	View to show a list of Home using generic API
 	"""
 
-	authentication_classes = [TokenAuthentication,]
 	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 	queryset = Home.objects.all()
 	serializer_class = HomeSerializer
@@ -64,7 +61,6 @@ class HumanViewSet(viewsets.ModelViewSet):
 	"""
 	View to show list of Human using generic API
 	"""
-	authentication_classes = [TokenAuthentication,]
 	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 	queryset = Human.objects.all()
 	serializer_class = HumanSerializer

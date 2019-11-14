@@ -8,7 +8,6 @@ from rest_framework.authtoken import views as auth_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('cats.urls')),
-    path('api-auth/', include('rest_framework.urls')),
     path('api-auth-token/', auth_views.obtain_auth_token, name='api-token-auth'),
 ]
 
@@ -17,3 +16,7 @@ if settings.DEBUG:
     urlpatterns = [
         path('__debug__/', include(debug_toolbar.urls)),
     ] + urlpatterns
+
+urlpatterns += [
+    path('api-auth/', include('rest_framework.urls')),
+]
