@@ -33,7 +33,7 @@ class Cat(TimeStampedModel):
 	"""
 
 	gender = models.CharField(max_length = 10)
-	date_of_birth = models.DateTimeField()
+	date_of_birth = models.DateField()
 	description = models.TextField()
 	breed = models.ForeignKey('Breed', on_delete= models.CASCADE, related_name='cats')
 	owner = models.ForeignKey('Human', on_delete= models.CASCADE, related_name='cats')
@@ -58,7 +58,7 @@ class Human(TimeStampedModel):
 
 	user = models.ForeignKey('auth.User', related_name='humans', on_delete=models.CASCADE)
 	gender = models.CharField(max_length = 10)
-	date_of_birth = models.DateTimeField()
+	date_of_birth = models.DateField()
 	description = models.TextField()
 	home = models.ForeignKey('Home', on_delete=models.CASCADE)
 

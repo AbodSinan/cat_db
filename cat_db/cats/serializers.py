@@ -1,6 +1,10 @@
-from cats.models import Breed, Cat, Home, Human
+import datetime
+
 from django.contrib.auth.models import User
+
 from rest_framework import serializers
+
+from cats.models import Breed, Cat, Home, Human
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -29,11 +33,20 @@ class UserSigninSerializer(serializers.Serializer):
 	password = serializers.CharField(required = True)
 
 class CatSerializer(serializers.ModelSerializer):
+	"""
+	Serializer of the Human Model
+	"""
+	
 	home = serializers.ReadOnlyField(source = 'owner.home.name')
 
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
 	
+	def validate_date_of_birth(self, value):
+		if value > datetime.datetime.now():
+			raise serializers.ValidationError("Date is in the future")
+		return value
+
 	class Meta:
 		model = Cat
 		user = serializers.ReadOnlyField(source = 'user.username')
@@ -44,6 +57,10 @@ class HomeListingField(serializers.RelatedField):
 		return value.home 
 
 class BreedSerializer(serializers.ModelSerializer):
+	"""
+	Serializer of the Human Model
+	"""
+
 	cats = CatSerializer(read_only = True, many = True)
 	#homes = HomeListingField(many = True, read_only = True)
 	#homes = serializers.ReadOnlyField(source='cats.home')
@@ -51,6 +68,11 @@ class BreedSerializer(serializers.ModelSerializer):
 	#homes = serializers.CharField(source='cats.home', read_only=True, many=True) ##many is not included
 	#homes = serializers.SlugRelatedField(source = 'cats.all', slug_field='home',many=True, read_only=True)
 	homes = serializers.SerializerMethodField()
+
+	def validate_date_of_birth(self, value):
+		if value > datetime.datetime.now():
+			raise serializers.ValidationError("Date is in the future")
+		return value
 
 	def get_homes(self, instance):
 		homes = []
@@ -74,7 +96,15 @@ class BreedSerializer(serializers.ModelSerializer):
 		
 
 class HumanSerializer(serializers.ModelSerializer):
+	"""
+	Serializer of the Human Model
+	"""
 	cats = CatSerializer(read_only=True, many=True)
+
+	def validate_date_of_birth(self, value):
+		if value > datetime.datetime.now():
+			raise serializers.ValidationError("Date is in the future")
+		return value
 
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
@@ -85,7 +115,16 @@ class HumanSerializer(serializers.ModelSerializer):
 		fields = ['ID', 'user', 'name', 'gender', 'date_of_birth', 'description', 'home', 'cats']
 
 class HomeSerializer(serializers.ModelSerializer):
+	"""
+	Serializer of the Home Model
+	"""
+
 	humans = HumanSerializer(read_only = True, many = True)
+
+	def validate_date_of_birth(self, value):
+		if value > datetime.datetime.now():
+			raise serializers.ValidationError("Date entered is in the future")
+		return value
 
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)

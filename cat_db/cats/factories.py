@@ -28,7 +28,7 @@ class HumanFactory(factory.django.DjangoModelFactory):
     home = factory.SubFactory(HomeFactory)
     name = factory.Faker('name')
     ID = factory.Faker('pyint')
-    date_of_birth = factory.Faker('date_time')
+    date_of_birth = factory.Faker('date')
     description = factory.Faker('text')
 
     class Meta:
@@ -53,7 +53,7 @@ class CatFactory(factory.django.DjangoModelFactory):
     ID = factory.Faker('pyint')
     description = factory.Faker('text')
     gender = factory.Iterator(['male', 'female', 'neutered'])
-    date_of_birth = factory.Faker('date_time')
+    date_of_birth = factory.Faker('date')
     
     class Meta:
         model = Cat
