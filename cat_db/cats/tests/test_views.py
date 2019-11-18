@@ -5,6 +5,7 @@ import datetime
 
 from django.contrib.auth.models import AnonymousUser, User
 from django.conf import settings
+from django.forms.models import model_to_dict
 
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.views import obtain_auth_token
@@ -15,64 +16,8 @@ from cats.views import BreedViewSet, CatViewSet, HomeViewSet, HumanViewSet
 from cats.models import Cat, Breed
 from cats.factories import HomeWithHumans, BreedWithCats, CatFactory, HumanWithCats, BreedFactory, HomeFactory, HumanFactory
 from cats.serializers import BreedSerializer, HomeSerializer, HumanSerializer, CatSerializer
+from cats.authentication import is_token_expired, expires_in
 
-
-class UnauthorizedAccessTest(APITestCase):
-    """
-    Defines test cases for access with or without authorization
-    """
-
-    def setUp(self):
-        fake = Faker()
-        name = fake.name()
-        email = fake.email()
-        password = fake.pystr()
-        self.user = User.objects.create_user(name, email, password) #no need to define token, since the process is automated on object creation in models.py
-        #self.client.auth = TokenAuthentication()
-        self.client.login(username = name, password = password)
-        response = self.client.post('/api-auth-token/', {'username' : name, 'password' : password}, format='json')
-        #response = obtain_auth_token(request)
-        self.access_token = response.json()['token']
-        #TODO: figure out how to convert this token into a Token object
-        self.unauth_user = AnonymousUser()
-        self.breed = BreedFactory(user=self.user)
-        self.breed_new = BreedFactory(user = self.user)
-        self.serial = BreedSerializer(instance = self.breed)
-        self.serial_new = BreedSerializer(instance = self.breed_new)
-        self.token = Token.objects.get(user=self.user, key=self.access_token)
-
-
-    def test_auth_get(self):
-        response = self.client.get('/cats/', HTTP_AUTHORIZATION='Token {}'.format(self.token))
-        self.assertEqual(response.status_code, 200)
-
-    def test_unauth_get(self):
-        response = self.client.get('/cats/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_unauth_post(self):
-        """
-        testing a non-logged in user's ability to post
-        """
-
-        self.client.logout()
-        response = self.client.post('/breeds/', self.serial.data, format = 'json')
-        self.assertEqual(response.status_code, 403)
-
-    def test_auth_post(self):
-        response = self.client.post('/breeds/', {'ID' : 1, 'user': self.user.id, 'name': self.serial.data['name'], 
-                                    'origin' : self.serial.data['origin'],
-                                    'description': self.serial.data['description']}, 
-                                    HTTP_AUTHORIZATION='Token {}'.format(self.token), format = 'json')
-        self.assertEqual(response.status_code, 201)
-
-    def test_expired_token(self):
-        token_time = settings.TOKEN_EXPIRED_AFTER_SECONDS
-        self.token.created = self.token.created + datetime.timedelta( days = token_time + 1)
-        response = self.client.post('/breeds/', {'ID' : 1, 'user': self.user.id, 'name': self.serial.data['name'], 
-                                    'origin' : self.serial.data['origin'],
-                                    'description': self.serial.data['description']}, HTTP_AUTHORIZATION='Token {}'.format(self.token), format = 'json')
-        self.assertEqual(response.status_code, 403)
 
 class CRETViewTests(APITestCase):
     """
@@ -87,169 +32,244 @@ class CRETViewTests(APITestCase):
         self.factory = APIRequestFactory()
         self.user = User.objects.create_user(name, email, password)
         self.unauth_user = AnonymousUser()
-        self.breed = BreedFactory(user = self.user)
-        self.breed_new = BreedFactory(user = self.user)
-        self.breed_serial = BreedSerializer(instance = self.breed)
-        self.serial_new = BreedSerializer(instance = self.breed_new)
-        self.home = HomeFactory(user = self.user)
-        self.home_new = HomeFactory(user = self.user)
-        self.home_serial = HomeSerializer(instance = self.home)
-        self.human = HumanFactory(user = self.user, home = self.home)
-        self.human_serial = HumanSerializer(instance = self.human)
-        self.cat = CatFactory(user = self.user, owner = self.human, breed = self.breed)
-        self.cat_serial = CatSerializer(instance = self.cat)
+        self.breed_data = {
+            'ID' : 1, 'name' : 'grayhound', 'origin' : 'siberia',
+            'description' : 'just a dog', 'user' : self.user.id
+        }
+        self.home_data = {
+            'ID' : 1, 'name' : 'sfda', 'address' : 'home',
+            'home_type' : "CD", 'user' : self.user.id
+        }
+        self.human_data = {
+            'ID' : 1,'user' :self.user.id, 'name' : 'sofia', 'gender' : 'male', 'date_of_birth' : '1996-12-19',
+            'description' : 'some description', 'cats' : []
+        }
+        self.cat_data = {
+            'ID' : 1, 'name' : 'snuffles', 'gender' : 'neuter',
+            'user' : self.user.id,'date_of_birth' : '1996-12-19',
+            'description' : 'some description'
+        }
 
     def test_breed_getList(self):
+        breed1 = BreedFactory(user = self.user)
+        breed2 = BreedFactory(user = self.user)
         view = BreedViewSet.as_view({'get': 'list'})
         request = self.factory.get('/breeds/')
         force_authenticate(request, user = self.user)
         response = view(request)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual([dict(x) for x in response.data], 
+                        [BreedSerializer(instance = breed1).data,
+                         BreedSerializer(instance = breed2).data])
 
     def test_breed_post(self):
-        view = BreedViewSet.as_view({'post': 'create'})
-        request = self.factory.post('/breeds/', {'ID' : 1, 'user': self.user.id, 
-                                    'name': self.breed_serial.data['name'], 
-                                    'origin' : self.breed_serial.data['origin'], 
-                                    'description': self.breed_serial.data['description']})
+        data = self.breed_data
+        view = BreedViewSet.as_view({'post': 'create', 'get' : 'retrieve'})
+        request = self.factory.post('/breeds/', data)
         force_authenticate(request, user = self.user)
         response = view(request)
         self.assertEqual(response.status_code, 201)
+        request = self.factory.get('/breeds/')
+        force_authenticate(request, user = self.user)
+        response = view(request, pk=data['ID'])
+        data['homes'] = []
+        data['cats'] = []
+        self.assertEqual(response.data, data)
 
     def test_breed_retrieve_auth(self):
         """
         test whether an authenticated user can retrieve
         """
+        breed = BreedFactory(user = self.user)
         view = BreedViewSet.as_view({'get': 'retrieve'})
         request = self.factory.get('/breeds/')
         request.user = self.user
         force_authenticate(request, user = self.user)
-        response = view(request, pk=self.breed.ID)
+        response = view(request, pk=breed.ID)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, BreedSerializer(instance = breed).data)
 
     def test_breed_retrieve_unauth(self):
         """
         test whether an unauthenticated user can retrieve
         """
+        breed = BreedFactory(user = self.user)
         view = BreedViewSet.as_view({'get': 'retrieve'})
         request = self.factory.get('/breeds/')
         request.user = self.unauth_user
-        response = view(request, pk=self.breed.ID)
+        response = view(request, pk=breed.ID)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, BreedSerializer(instance = breed).data)
 
     def test_breed_put(self):
+        breed = BreedFactory(user = self.user)
+        data = self.breed_data
+        data['cats'] = []
+        data['name'] = 'dandelion'
         view = BreedViewSet.as_view({'put': 'update'})
-        request = self.factory.put('/breeds/', {'ID' : 1, 'user': self.user.id, 'name': self.breed_serial.data['name'], 
-                                    'origin' : self.breed_serial.data['origin'], 
-                                    'description': self.breed_serial.data['description']})
+        request = self.factory.put('/breeds/', data)
         force_authenticate(request, user = self.user)
-        response = view(request, pk=self.breed.ID)
+        response = view(request, pk=breed.ID)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['name'], 'dandelion')
 
     def test_breed_delete(self):
+        breed = BreedFactory(user = self.user)
         view = BreedViewSet.as_view({'delete' : 'destroy'})
-        request = self.factory.delete('/breeds/' + str(self.breed.ID) + '/')
+        request = self.factory.delete('/breeds/' + str(breed.ID) + '/')
         force_authenticate(request, user = self.user)
-        response = view(request,pk=self.breed.ID)
+        response = view(request,pk=breed.ID)
         self.assertEqual(response.status_code, 204)
 
     def test_home_getList(self):
+        home1 = HomeFactory(user = self.user)
+        serial1 = HomeSerializer(instance = home1).data
+        home2 = HomeFactory(user = self.user)
+        serial2 = HomeSerializer(instance = home2).data
         view = HomeViewSet.as_view({'get': 'list'})
         request = self.factory.get('/homes/')
         force_authenticate(request, user = self.user)
         response = view(request)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual([dict(x) for x in response.data],
+                        [serial1, serial2])
 
     def test_home_post(self):
         view = HomeViewSet.as_view({'post': 'create'})
-        print(self.home_serial.data)
-        request = self.factory.post('/homes/', self.home_serial.data)
+        request = self.factory.post('/homes/', self.home_data)
         force_authenticate(request, user = self.user)
         response = view(request)
         self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data, self.home_data)
 
     def test_home_retrieve_auth(self):
         """
         test whether an authenticated user can retrieve
         """
+        home = HomeFactory(user = self.user)
         view = HomeViewSet.as_view({'get': 'retrieve'})
         request = self.factory.get('/breeds/')
         request.user = self.user
         force_authenticate(request, user = self.user)
-        response = view(request, pk=self.home.ID)
+        response = view(request, pk=home.ID)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, HomeSerializer(instance = home).data)
 
     def test_home_retrieve_unauth(self):
         """
         test whether an unauthenticated user can retrieve
         """
+        home = HomeFactory(user = self.user)
         view = HomeViewSet.as_view({'get': 'retrieve'})
         request = self.factory.get('/homes/')
-        response = view(request, pk=self.home.ID)
+        response = view(request, pk=home.ID)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, HomeSerializer(instance = home).data)
 
     def test_home_put(self):
+        home = HomeFactory(user = self.user)
+        home_serial = HomeSerializer(home).data
+        home_serial['name'] = 'jones'
         view = HomeViewSet.as_view({'put': 'update'})
-        request = self.factory.put('/homes/', self.home_serial.data, format='json')
+        request = self.factory.put('/homes/', home_serial)
         force_authenticate(request, user = self.user)
-        response = view(request, pk=self.home.ID)
+        response = view(request, pk=home.ID)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['name'], 'jones') 
 
     def test_home_delete(self):
+        home = HomeFactory(user = self.user)
         view = HomeViewSet.as_view({'delete' : 'destroy'})
-        request = self.factory.delete('/homes/' + str(self.home.ID) + '/')
+        request = self.factory.delete('/homes/' + str(home.ID) + '/')
         force_authenticate(request, user = self.user)
-        response = view(request,pk=self.home.ID)
+        response = view(request,pk=home.ID)
         self.assertEqual(response.status_code, 204)
 
 
     def test_human_getList(self):
+        human1 = HumanFactory(user = self.user)
+        human2 = HumanFactory(user = self.user)
         view = HumanViewSet.as_view({'get' : 'list'})
         request = self.factory.get('/humans/')
         request.user = self.user
         force_authenticate(request, user = self.user)
         response = view(request)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual([dict(x) for x in response.data], 
+                        [HumanSerializer(instance = human1).data,
+                         HumanSerializer(instance = human2).data])
 
     def test_human_post(self):
+        home = HomeFactory(user = self.user)
+        data = self.human_data
+        data['home'] = home.ID
         view = HumanViewSet.as_view({'post' : 'create'})
-        request = self.factory.post('/humans/', self.human_serial.data, format = 'json')
+        request = self.factory.post('/humans/', data)
         force_authenticate(request, user = self.user)
         response = view(request)
         self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data, data)
 
     def test_human_delete(self):
+        human = HumanFactory(user = self.user)
         view = HumanViewSet.as_view({'delete' : 'destroy'})
-        request = self.factory.post('/humans/', self.human_serial.data)
-        request = self.factory.delete('/humans/' + str(self.human.ID) + '/')
+        request = self.factory.delete('/humans/' + str(human.ID) + '/')
         force_authenticate(request, user = self.user)
-        response = view(request, pk = self.human.ID)
+        response = view(request, pk = human.ID)
         self.assertEqual(response.status_code, 204)
 
     def test_human_put(self):
-        view = HumanViewSet.as_view({'put' : 'update'})
-        request = self.factory.put('/humans/', self.human_serial.data, format = 'json')
+        home = HomeFactory(user = self.user)
+        human = HumanFactory(user = self.user)
+        view = HumanViewSet.as_view({'put' : 'partial_update'})
+        data = self.human_data
+        data['user'] = self.user.id
+        data['home'] = home.ID
+        data['gender'] = 'fallic'
+        request = self.factory.put('/humans/', data)
         force_authenticate(request, user=self.user)
-        response = view(request, pk=self.human.ID)
+        response = view(request, pk=human.ID)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['gender'], 'fallic')
 
     def test_cat_getList(self):
+        breed = BreedFactory(user = self.user)
+        home = HomeFactory(user = self.user)
+        owner = HumanFactory(user = self.user, home = home)
+        cat1 = CatFactory(user = self.user, breed = breed, owner = owner)
+        cat2 = CatFactory(user = self.user, breed = breed, owner = owner)
         view = CatViewSet.as_view({'get' : 'list'})
         request = self.factory.get('/cats/')
         force_authenticate(request)
         response = view(request)
         self.assertEqual(response.status_code, 200)
+        cat1_serial = CatSerializer(instance = cat1).data
+        cat1_serial['home'] = home.name
+        cat2_serial = CatSerializer(instance = cat2).data
+        cat2_serial['home'] = home.name
+        self.assertEqual([dict(x) for x in response.data], [cat1_serial, cat2_serial])
 
     def test_cat_post(self):
+        home = HomeFactory(user = self.user)
+        breed = BreedFactory(user = self.user)
+        owner = HumanFactory(user = self.user, home = home)
+        data = self.cat_data
+        data['breed'] = breed.ID
+        data['owner'] = owner.ID
+        data['home'] = home.ID
         view = CatViewSet.as_view({'post' : 'create'})
-        request = self.factory.post('/cats/', self.cat_serial.data, format = 'json')
+        request = self.factory.post('/cats/', data)
         force_authenticate(request, user = self.user)
         response = view(request)
+        data['home'] = home.name
         self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data, data)
 
     def test_cat_delete(self):
+        cat = CatFactory(user = self.user)
         view = CatViewSet.as_view({'delete' : 'destroy'})
-        request = self.factory.delete('/cats/' + str(self.cat.ID) + '/')
+        request = self.factory.delete('/cats/' + str(cat.ID) + '/')
         force_authenticate(request, user = self.user)
-        response = view(request, pk = self.cat.ID)
+        response = view(request, pk = cat.ID)
         self.assertEqual(response.status_code, 204)
+        

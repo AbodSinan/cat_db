@@ -1,5 +1,6 @@
+from datetime import datetime, timedelta
+import pytz
 
-from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 
@@ -15,14 +16,6 @@ def expires_in(token):
 def is_token_expired(token):
     return expires_in(token) < timedelta(seconds = 0)
 
-def token_expire_handler(token):
-    is_expired = is_token_expired(token)
-    if is_expired:
-        token.delete()
-        token = Token.objects.create(user = token.user)
-    return is_expired, token
-
-
 class ExpiringTokenAuthentication(TokenAuthentication):
     """
     If token is expired then it will be removed
@@ -30,15 +23,18 @@ class ExpiringTokenAuthentication(TokenAuthentication):
     """
     def authenticate_credentials(self, key):
         try:
-            token = Token.objects.get(key = key)
-        except Token.DoesNotExist:
-            raise AuthenticationFailed("Invalid Token")
-        
-        if not token.user.is_active:
-            raise AuthenticationFailed("User is not active")
+            token = self.model.objects.get(key=key)
+        except self.model.DoesNotExist:
+            raise AuthenticationFailed('Invalid token')
 
-        is_expired, token = token_expire_handler(token)
-        if is_expired:
-            raise AuthenticationFailed("The Token is expired")
-        
-        return (token.user, token)
+        if not token.user.is_active:
+            raise AuthenticationFailed('User inactive or deleted')
+
+        # This is required for the time comparison
+        utc_now = datetime.utcnow()
+        utc_now = utc_now.replace(tzinfo=pytz.utc)
+
+        if is_token_expired(token):
+            raise AuthenticationFailed('Token has expired')
+
+        return token.user, token

@@ -4,6 +4,9 @@ from django.contrib.auth.models import User
 
 from rest_framework import serializers
 
+from django.conf import settings
+
+from rest_framework.authentication import TokenAuthentication
 from cats.models import Breed, Cat, Home, Human
 
 
@@ -36,14 +39,14 @@ class CatSerializer(serializers.ModelSerializer):
 	"""
 	Serializer of the Human Model
 	"""
-	
+
 	home = serializers.ReadOnlyField(source = 'owner.home.name')
 
 	def perform_create(self, serializer):
 		serializer.save(user=self.request.user)
 	
 	def validate_date_of_birth(self, value):
-		if value > datetime.datetime.now():
+		if value > datetime.date.today():
 			raise serializers.ValidationError("Date is in the future")
 		return value
 
@@ -68,11 +71,6 @@ class BreedSerializer(serializers.ModelSerializer):
 	#homes = serializers.CharField(source='cats.home', read_only=True, many=True) ##many is not included
 	#homes = serializers.SlugRelatedField(source = 'cats.all', slug_field='home',many=True, read_only=True)
 	homes = serializers.SerializerMethodField()
-
-	def validate_date_of_birth(self, value):
-		if value > datetime.datetime.now():
-			raise serializers.ValidationError("Date is in the future")
-		return value
 
 	def get_homes(self, instance):
 		homes = []
@@ -102,7 +100,7 @@ class HumanSerializer(serializers.ModelSerializer):
 	cats = CatSerializer(read_only=True, many=True)
 
 	def validate_date_of_birth(self, value):
-		if value > datetime.datetime.now():
+		if value > datetime.date.today():
 			raise serializers.ValidationError("Date is in the future")
 		return value
 
@@ -122,7 +120,7 @@ class HomeSerializer(serializers.ModelSerializer):
 	humans = HumanSerializer(read_only = True, many = True)
 
 	def validate_date_of_birth(self, value):
-		if value > datetime.datetime.now():
+		if value > datetime.date.today():
 			raise serializers.ValidationError("Date entered is in the future")
 		return value
 
