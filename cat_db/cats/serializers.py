@@ -1,12 +1,11 @@
 import datetime
 
 from django.contrib.auth.models import User
-
-from rest_framework import serializers
-
 from django.conf import settings
 
+from rest_framework import serializers
 from rest_framework.authentication import TokenAuthentication
+
 from cats.models import Breed, Cat, Home, Human
 
 

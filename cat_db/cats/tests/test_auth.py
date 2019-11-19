@@ -1,5 +1,6 @@
 from faker import Faker
 import datetime
+from mock import patch
 
 from django.contrib.auth.models import User, AnonymousUser
 from django.conf import settings
@@ -13,6 +14,13 @@ from cats.factories import BreedFactory
 from cats.authentication import is_token_expired
 from cats.serializers import BreedSerializer
 
+
+class FakeDateTime(datetime.datetime):
+    """
+    overwriting the datetime class to manipulate datetime
+    """
+    def __new__(cls, *args, **kwargs):
+        return datetime.datetime.__new__(datetime, *args, **kwargs)
 
 class UnauthorizedAccessTest(APITestCase):
     """
@@ -60,17 +68,19 @@ class UnauthorizedAccessTest(APITestCase):
         response = self.client.get('/breeds/', HTTP_AUTHORIZATION='Token {}'.format(self.token))
         self.assertEqual(dict(response.data[0]), self.data)
 
+    """
+    @patch('cats.authentication.datetime', FakeDateTime) #instead of using the datetime class, use the custom FakeDateTime to simulate future
     def test_expired_token(self):
-        print(self.token.created)
-        print(is_token_expired(self.token))
-        token_time = settings.TOKEN_EXPIRED_AFTER_SECONDS
-        self.token.created = self.token.created - datetime.timedelta( seconds=token_time + 2)
-        print(self.token.created)
+        FakeDateTime.utcnow = classmethod(lambda cls: datetime.datetime.utcnow() + datetime.timedelta(days =2))
+        print(FakeDateTime.utcnow())
         print(is_token_expired(self.token))
         #post with the expired token
-        response = self.client.post('/breeds/', self.data, token = self.token)
+        response = self.client.post('/breeds/', self.data, HTTP_AUTHORIZATION='Token {}'.format(self.token))
+        print(is_token_expired(self.token))
         self.assertEqual(response.status_code, 403)
+    """
 
     def test_invalid_token(self):
         response = self.client.post('/breeds/',self.data, HTTP_AUTHORIZATION='Token 423134122134')
+        print(response.data)
         self.assertEqual(response.status_code, 403)
