@@ -45,6 +45,9 @@ class CatSerializer(serializers.ModelSerializer):
 		serializer.save(user=self.request.user)
 	
 	def validate_date_of_birth(self, value):
+		"""
+		A validator to make sure the date_of_birth is not in the future
+		"""
 		if value > datetime.date.today():
 			raise serializers.ValidationError("Date is in the future")
 		return value
@@ -72,6 +75,9 @@ class BreedSerializer(serializers.ModelSerializer):
 	homes = serializers.SerializerMethodField()
 
 	def get_homes(self, instance):
+		"""
+		A serializer method field to extract home instances of Cat objects
+		"""
 		homes = []
 		cat_instances =  instance.cats.all()
 		for cat in cat_instances:

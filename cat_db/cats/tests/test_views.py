@@ -51,6 +51,9 @@ class CRETViewTests(APITestCase):
         }
 
     def test_breed_getList(self):
+        """
+        test whether a user can retrieve a list of breed objects
+        """
         breed1 = BreedFactory(user = self.user)
         breed2 = BreedFactory(user = self.user)
         view = BreedViewSet.as_view({'get': 'list'})
@@ -63,6 +66,9 @@ class CRETViewTests(APITestCase):
                          BreedSerializer(instance = breed2).data])
 
     def test_breed_post(self):
+        """
+        test whether a user can post data into breeds
+        """
         data = self.breed_data
         view = BreedViewSet.as_view({'post': 'create', 'get' : 'retrieve'})
         request = self.factory.post('/breeds/', data)
@@ -102,6 +108,9 @@ class CRETViewTests(APITestCase):
         self.assertEqual(response.data, BreedSerializer(instance = breed).data)
 
     def test_breed_put(self):
+        """
+        test whether a user can update a Breed instance
+        """
         breed = BreedFactory(user = self.user)
         data = self.breed_data
         data['cats'] = []
@@ -114,6 +123,9 @@ class CRETViewTests(APITestCase):
         self.assertEqual(response.data['name'], 'dandelion')
 
     def test_breed_delete(self):
+        """
+        test if a user can delete a Breed instance
+        """
         breed = BreedFactory(user = self.user)
         view = BreedViewSet.as_view({'delete' : 'destroy'})
         request = self.factory.delete('/breeds/' + str(breed.ID) + '/')
@@ -122,6 +134,9 @@ class CRETViewTests(APITestCase):
         self.assertEqual(response.status_code, 204)
 
     def test_home_getList(self):
+        """
+        test if a user can get a list of Home objects
+        """
         home1 = HomeFactory(user = self.user)
         serial1 = HomeSerializer(instance = home1).data
         home2 = HomeFactory(user = self.user)
@@ -135,6 +150,9 @@ class CRETViewTests(APITestCase):
                         [serial1, serial2])
 
     def test_home_post(self):
+        """
+        test if a user can post a Home object
+        """
         view = HomeViewSet.as_view({'post': 'create'})
         request = self.factory.post('/homes/', self.home_data)
         force_authenticate(request, user = self.user)
@@ -157,7 +175,7 @@ class CRETViewTests(APITestCase):
 
     def test_home_retrieve_unauth(self):
         """
-        test whether an unauthenticated user can retrieve
+        test whether an unauthenticated user can retrieve a Home object
         """
         home = HomeFactory(user = self.user)
         view = HomeViewSet.as_view({'get': 'retrieve'})
@@ -167,6 +185,9 @@ class CRETViewTests(APITestCase):
         self.assertEqual(response.data, HomeSerializer(instance = home).data)
 
     def test_home_put(self):
+        """
+        test whether a user can update a Home instance
+        """
         home = HomeFactory(user = self.user)
         home_serial = HomeSerializer(home).data
         home_serial['name'] = 'jones'
@@ -178,6 +199,9 @@ class CRETViewTests(APITestCase):
         self.assertEqual(response.data['name'], 'jones') 
 
     def test_home_delete(self):
+        """
+        tests whether the user can delete a Home instance
+        """
         home = HomeFactory(user = self.user)
         view = HomeViewSet.as_view({'delete' : 'destroy'})
         request = self.factory.delete('/homes/' + str(home.ID) + '/')
@@ -187,6 +211,9 @@ class CRETViewTests(APITestCase):
 
 
     def test_human_getList(self):
+        """
+        tests whether a user can get a list of Human objects
+        """
         human1 = HumanFactory(user = self.user)
         human2 = HumanFactory(user = self.user)
         view = HumanViewSet.as_view({'get' : 'list'})
@@ -200,6 +227,9 @@ class CRETViewTests(APITestCase):
                          HumanSerializer(instance = human2).data])
 
     def test_human_post(self):
+        """
+        tests whether a user can post an instance of Human
+        """
         home = HomeFactory(user = self.user)
         data = self.human_data
         data['home'] = home.ID
@@ -211,6 +241,9 @@ class CRETViewTests(APITestCase):
         self.assertEqual(response.data, data)
 
     def test_human_delete(self):
+        """
+        tests whether a user can delete an instance of Human
+        """
         human = HumanFactory(user = self.user)
         view = HumanViewSet.as_view({'delete' : 'destroy'})
         request = self.factory.delete('/humans/' + str(human.ID) + '/')
@@ -219,6 +252,9 @@ class CRETViewTests(APITestCase):
         self.assertEqual(response.status_code, 204)
 
     def test_human_put(self):
+        """
+        tests whether a user can update an instance of Human
+        """
         home = HomeFactory(user = self.user)
         human = HumanFactory(user = self.user)
         view = HumanViewSet.as_view({'put' : 'partial_update'})
@@ -233,6 +269,9 @@ class CRETViewTests(APITestCase):
         self.assertEqual(response.data['gender'], 'fallic')
 
     def test_cat_getList(self):
+        """
+        tests whether the user can get a list of Cat objects
+        """
         breed = BreedFactory(user = self.user)
         home = HomeFactory(user = self.user)
         owner = HumanFactory(user = self.user, home = home)
@@ -250,6 +289,9 @@ class CRETViewTests(APITestCase):
         self.assertEqual([dict(x) for x in response.data], [cat1_serial, cat2_serial])
 
     def test_cat_post(self):
+        """
+        tests whether the user can post a Cat object
+        """
         home = HomeFactory(user = self.user)
         breed = BreedFactory(user = self.user)
         owner = HumanFactory(user = self.user, home = home)
@@ -266,6 +308,9 @@ class CRETViewTests(APITestCase):
         self.assertEqual(response.data, data)
 
     def test_cat_delete(self):
+        """
+        tests whether the user can delete a Cat object using a view
+        """
         cat = CatFactory(user = self.user)
         view = CatViewSet.as_view({'delete' : 'destroy'})
         request = self.factory.delete('/cats/' + str(cat.ID) + '/')
