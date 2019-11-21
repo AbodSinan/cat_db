@@ -5,10 +5,14 @@ from django.dispatch import receiver
 
 from rest_framework.authtoken.models import Token
 
+
+#a function that creates a token for users whenever the model is created, removed after adding JWT authentication
+"""
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
+"""
 
 class TimeStampedModel(models.Model):
 	"""

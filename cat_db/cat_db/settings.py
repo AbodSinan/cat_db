@@ -81,7 +81,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-# Determines the period for which the token is valid
+# Determines the period for which the token is valid, used in custom token authentication
 TOKEN_EXPIRED_AFTER_SECONDS = 86400
 
 # Database
@@ -92,9 +92,9 @@ DATABASES = {
 'ENGINE': 'django.db.backends.postgresql_psycopg2',
 'NAME': 'myproject',
 'USER': 'myprojectuser',
-'PASSWORD': 'password',
-'HOST': 'localhost',
-'PORT': '',
+'PASSWORD': 'testing321',
+'HOST': 'db', #change to localhost outside docker
+'PORT': '5432', #change to "" outside docker
 }
 }
 

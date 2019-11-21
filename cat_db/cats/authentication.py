@@ -16,6 +16,7 @@ def expires_in(token):
 def is_token_expired(token):
     return expires_in(token) < timedelta(seconds = 0)
 
+# An optional custom Authentication that can be used, but JWT is more robust
 class ExpiringTokenAuthentication(TokenAuthentication):
     """
     If token is expired then it will be removed
