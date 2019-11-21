@@ -317,4 +317,17 @@ class CRETViewTests(APITestCase):
         force_authenticate(request, user = self.user)
         response = view(request, pk = cat.ID)
         self.assertEqual(response.status_code, 204)
+
+    def test_breed_reversehome(self):
+        """
+        test to check if the homes element in breeds is correct
+        """
+        bwc = BreedWithCats(user = self.user)
+        view = BreedViewSet.as_view({'get' : 'list'})
+        request = self.factory.get('/breeds/')
+        force_authenticate(request, user = self.user)
+        response = view(request)
+        #check if the cat's instance of home is similar to that of the breed's homes
+        self.assertEqual(response.data[0]['cats'][0]['home'], response.data[0]['homes'][0])
+        
         
