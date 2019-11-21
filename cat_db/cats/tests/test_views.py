@@ -12,7 +12,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase, APIRequestFactory, force_authenticate
 
-from cats.views import BreedViewSet, CatViewSet, HomeViewSet, HumanViewSet
+from cats.views import BreedViewSet, CatViewSet, HomeViewSet, HumanViewSet, UserViewSet
 from cats.models import Cat, Breed
 from cats.factories import HomeWithHumans, BreedWithCats, CatFactory, HumanWithCats, BreedFactory, HomeFactory, HumanFactory
 from cats.serializers import BreedSerializer, HomeSerializer, HumanSerializer, CatSerializer
@@ -329,5 +329,31 @@ class CRETViewTests(APITestCase):
         response = view(request)
         #check if the cat's instance of home is similar to that of the breed's homes
         self.assertEqual(response.data[0]['cats'][0]['home'], response.data[0]['homes'][0])
-        
-        
+
+
+class UserRelationsTest(APITestCase):
+    """
+    test whether the created models are linked with the user
+    """
+
+    def setUp(self):
+        fake = Faker()
+        name = fake.name()
+        email = fake.email()
+        password = fake.pystr()
+        self.factory = APIRequestFactory()
+        self.user = User.objects.create_superuser(name, email, password)
+
+    def test_user_contain_all(self):
+        home = HomeFactory(user = self.user)
+        breed = BreedFactory(user = self.user)
+        human = HumanFactory(user = self.user)
+        cat = CatFactory(user = self.user)
+        view = UserViewSet.as_view({'get' : 'retrieve'})
+        request = self.factory.get('/users/')
+        force_authenticate(request, user = self.user)
+        response = view(request, pk=self.user.id)
+        self.assertEqual(response.data['humans'][0], human.ID)
+        self.assertEqual(response.data['breeds'][0], breed.ID)
+        self.assertEqual(response.data['homes'][0], home.ID)
+        self.assertEqual(response.data['cats'][0], cat.ID)  
