@@ -30,10 +30,6 @@ class UserSerializer(serializers.ModelSerializer):
 		user.save()
 		return user
 
-class UserSigninSerializer(serializers.Serializer):
-	username = serializers.CharField(required = True)
-	password = serializers.CharField(required = True)
-
 class CatSerializer(serializers.ModelSerializer):
 	"""
 	Serializer of the Human Model
@@ -42,6 +38,9 @@ class CatSerializer(serializers.ModelSerializer):
 	home = serializers.ReadOnlyField(source = 'owner.home.name')
 
 	def perform_create(self, serializer):
+		"""
+		link the serializer to the creating user
+		"""
 		serializer.save(user=self.request.user)
 	
 	def validate_date_of_birth(self, value):
@@ -57,21 +56,12 @@ class CatSerializer(serializers.ModelSerializer):
 		user = serializers.ReadOnlyField(source = 'user.username')
 		fields = ['ID', 'user', 'name', 'gender', 'date_of_birth', 'description', 'breed', 'owner', 'home']
 
-class HomeListingField(serializers.RelatedField):
-	def to_native(self, value):
-		return value.home 
-
 class BreedSerializer(serializers.ModelSerializer):
 	"""
-	Serializer of the Human Model
+	Serializer of the Breed Model
 	"""
 
 	cats = CatSerializer(read_only = True, many = True)
-	#homes = HomeListingField(many = True, read_only = True)
-	#homes = serializers.ReadOnlyField(source='cats.home')
-	#homes = serializers.PrimaryKeyRelatedField(many = True, queryset = cats)
-	#homes = serializers.CharField(source='cats.home', read_only=True, many=True) ##many is not included
-	#homes = serializers.SlugRelatedField(source = 'cats.all', slug_field='home',many=True, read_only=True)
 	homes = serializers.SerializerMethodField()
 
 	def get_homes(self, instance):
@@ -92,12 +82,6 @@ class BreedSerializer(serializers.ModelSerializer):
 		fields = ['ID', 'user','name', 'origin', 'description', 'cats', 'homes',]
 		model = Breed
 
-	"""def to_representation(self, instance):
-		data = super(BreedSerializer, self).to_representation(instance)
-		data.homes = CatSerializer(instance.cats.home, many=True).data
-		return data"""
-		
-
 class HumanSerializer(serializers.ModelSerializer):
 	"""
 	Serializer of the Human Model
@@ -105,6 +89,9 @@ class HumanSerializer(serializers.ModelSerializer):
 	cats = CatSerializer(read_only=True, many=True)
 
 	def validate_date_of_birth(self, value):
+		"""
+		A validator to make sure that the date is not in the future
+		"""
 		if value > datetime.date.today():
 			raise serializers.ValidationError("Date is in the future")
 		return value
@@ -121,7 +108,6 @@ class HomeSerializer(serializers.ModelSerializer):
 	"""
 	Serializer of the Home Model
 	"""
-
 	humans = HumanSerializer(read_only = True, many = True)
 
 	def validate_date_of_birth(self, value):

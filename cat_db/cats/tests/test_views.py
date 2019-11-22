@@ -1,6 +1,5 @@
 import factory
 from faker import Faker
-import coreapi
 import datetime
 
 from django.contrib.auth.models import AnonymousUser, User
@@ -25,13 +24,17 @@ class CRETViewTests(APITestCase):
     """
 
     def setUp(self):
+        
+        #generate random username, password, and email for users
         fake = Faker()
         name = fake.name()
         email = fake.email()
         password = fake.pystr()
+        #define a factory that will generate requests
         self.factory = APIRequestFactory()
         self.user = User.objects.create_user(name, email, password)
         self.unauth_user = AnonymousUser()
+        #some data that will be used for posting
         self.breed_data = {
             'ID' : 1, 'name' : 'grayhound', 'origin' : 'siberia',
             'description' : 'just a dog', 'user' : self.user.id
@@ -54,10 +57,12 @@ class CRETViewTests(APITestCase):
         """
         test whether a user can retrieve a list of breed objects
         """
+        #for simplicity, only two instances of Home are created, the same can be done by looping N number of times
         breed1 = BreedFactory(user = self.user)
         breed2 = BreedFactory(user = self.user)
         view = BreedViewSet.as_view({'get': 'list'})
         request = self.factory.get('/breeds/')
+        #because the tests are not for authentication, force_authentication is used to skip authentication steps
         force_authenticate(request, user = self.user)
         response = view(request)
         self.assertEqual(response.status_code, 200)
@@ -80,6 +85,7 @@ class CRETViewTests(APITestCase):
         response = view(request, pk=data['ID'])
         data['homes'] = []
         data['cats'] = []
+        #assert that the response data is equal to the posted data
         self.assertEqual(response.data, data)
 
     def test_breed_retrieve_auth(self):
@@ -102,9 +108,11 @@ class CRETViewTests(APITestCase):
         breed = BreedFactory(user = self.user)
         view = BreedViewSet.as_view({'get': 'retrieve'})
         request = self.factory.get('/breeds/')
+        #assign the unauthorized user as the user of the request
         request.user = self.unauth_user
         response = view(request, pk=breed.ID)
         self.assertEqual(response.status_code, 200)
+        #make sure that the data from the response with the serialized instance
         self.assertEqual(response.data, BreedSerializer(instance = breed).data)
 
     def test_breed_put(self):
@@ -114,12 +122,14 @@ class CRETViewTests(APITestCase):
         breed = BreedFactory(user = self.user)
         data = self.breed_data
         data['cats'] = []
+        #update the name of the instance
         data['name'] = 'dandelion'
         view = BreedViewSet.as_view({'put': 'update'})
         request = self.factory.put('/breeds/', data)
         force_authenticate(request, user = self.user)
         response = view(request, pk=breed.ID)
         self.assertEqual(response.status_code, 200)
+        #make sure that the name is updated
         self.assertEqual(response.data['name'], 'dandelion')
 
     def test_breed_delete(self):
@@ -131,8 +141,11 @@ class CRETViewTests(APITestCase):
         request = self.factory.delete('/breeds/' + str(breed.ID) + '/')
         force_authenticate(request, user = self.user)
         response = view(request,pk=breed.ID)
+        #assert that the instance is deleted using the status code
         self.assertEqual(response.status_code, 204)
 
+    #the rest of the tests follow a similar pattern. However, some of the models are dependant on others
+    #so they have to be linked
     def test_home_getList(self):
         """
         test if a user can get a list of Home objects
@@ -345,7 +358,6 @@ class UserRelationsTest(APITestCase):
         self.user = User.objects.create_superuser(name, email, password)
 
     def test_user_contain_all(self):
-        
         home = HomeFactory(user = self.user)
         breed = BreedFactory(user = self.user)
         human = HumanFactory(user = self.user)

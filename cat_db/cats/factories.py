@@ -5,6 +5,9 @@ from django.contrib.auth.models import User
 from cats.models import Home, Cat, Breed, Human
 
 class UserFactory(factory.django.DjangoModelFactory):
+    """
+    A factory to generate User Instances
+    """
     class Meta:
         model = User
     id = factory.Faker('pyint')
@@ -12,6 +15,9 @@ class UserFactory(factory.django.DjangoModelFactory):
     
 
 class HomeFactory(factory.django.DjangoModelFactory):
+    """
+    A factory to generate Home instances
+    """
     user = factory.SubFactory(UserFactory)
     name = factory.Faker('name')
     ID = factory.Faker('pyint')
@@ -23,6 +29,9 @@ class HomeFactory(factory.django.DjangoModelFactory):
     
 
 class HumanFactory(factory.django.DjangoModelFactory):
+    """
+    A factory to generate Human instances
+    """
     user = factory.SubFactory(UserFactory)
     gender = factory.Iterator(['male', 'female', 'others'])
     home = factory.SubFactory(HomeFactory)
@@ -35,6 +44,9 @@ class HumanFactory(factory.django.DjangoModelFactory):
         model = Human
 
 class BreedFactory(factory.django.DjangoModelFactory):
+    """
+    A factory to generate Breed instances
+    """
     user = factory.SubFactory(UserFactory)
     name = factory.Faker('name')
     ID = factory.Faker('pyint')
@@ -46,6 +58,9 @@ class BreedFactory(factory.django.DjangoModelFactory):
     
 
 class CatFactory(factory.django.DjangoModelFactory):
+    """
+    A factory to generate Cat instances
+    """
     user = factory.SubFactory(UserFactory)
     owner = factory.SubFactory(HumanFactory)
     breed = factory.SubFactory(BreedFactory)
@@ -59,10 +74,19 @@ class CatFactory(factory.django.DjangoModelFactory):
         model = Cat
 
 class HumanWithCats(HumanFactory):
+    """
+    a modified version of HumanFactory to generate a related Cat instance
+    """
     cats = factory.RelatedFactory(CatFactory, 'owner')
 
 class HomeWithHumans(HomeFactory):
+    """
+    a modified version of HomeFactory with related Human instances
+    """
     humans = factory.RelatedFactory(HumanFactory, 'home')
 
 class BreedWithCats(BreedFactory):
+    """
+    a modified version of BreedFactory with related Cats
+    """
     cats = factory.RelatedFactory(CatFactory, 'breed')

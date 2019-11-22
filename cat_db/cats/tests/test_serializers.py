@@ -33,17 +33,26 @@ class TestHomeModel(APITestCase):
         self.assertEqual(serial.is_valid(), False)
 
     def test_serializer_post(self):
+        """
+        tests posting using serializers and factories
+        """
         breed = BreedFactory(user = self.user)
         retrieved = Breed.objects.get(ID = breed.ID)
         self.assertEqual(retrieved, breed)
 
     def test_serializer_delete(self):
+        """
+        tests deleting data using serializers and factories
+        """
         breed = BreedFactory(user = self.user)
         Breed.objects.get(ID = breed.ID).delete()
         with self.assertRaises(ObjectDoesNotExist):
             Breed.objects.get(ID=breed.ID)
 
     def test_serializer_change(self):
+        """
+        tests changing data using serializers
+        """
         fake = Faker()
         breed = BreedFactory(user = self.user)
         retrieved = Breed.objects.get(ID = breed.ID)

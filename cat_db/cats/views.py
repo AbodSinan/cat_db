@@ -10,7 +10,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.authentication import TokenAuthentication
-#from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework import status
 
@@ -18,6 +17,7 @@ from cats.models import Cat, Home, Human, Breed
 from cats.serializers import CatSerializer, HumanSerializer, HomeSerializer, BreedSerializer, UserSerializer, UserSigninSerializer
 from cats.authentication import expires_in
 
+#A root page that directs the user to different views
 @api_view(['GET'])
 def api_root(request, format=None):
     return Response({
@@ -29,53 +29,12 @@ def api_root(request, format=None):
     })
 
 
-@api_view(["POST"])
-@permission_classes((permissions.AllowAny, ))
-def signin(request):
-    signin_serializer = UserSigninSerializer(data = request.data)
-    if not signin_serializer.is_valid():
-        return Response(signin_serializer.errors, status = status.HTTP_400_BAD_REQUEST)
-
-
-    user = authenticate(
-            username = signin_serializer.data['username'],
-            password = signin_serializer.data['password'] 
-        )
-    if not user:
-        return Response({'detail': 'Invalid Credentials or activate account'}, status=status.HTTP_404_NOT_FOUND)
-        
-    #TOKEN STUFF
-    token, _ = Token.objects.get_or_create(user = user)
-    
-    #token_expire_handler will check, if the token is expired it will generate new one
-    #is_expired, token = token_expire_handler(token)
-    user_serialized = UserSerializer(user)
-
-    return Response({
-        'user': user_serialized.data, 
-        'expires_in': expires_in(token),
-        'token': token.key
-    }, status=status.HTTP_200_OK)
-
-"""
-
-class ObtainExpiringAuthToken(ObtainAuthToken):
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            token, created =  Token.objects.get_or_create(user=serializer.validated_data['user'])
-
-            return Response({'token': token.key})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-obtain_expiring_auth_token = ObtainExpiringAuthToken.as_view()
-"""
-
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
 	"""
 	a Viewset to create and track users
 	"""
 	
+    #only the admin has access to the list of users
 	permission_classes = [permissions.IsAdminUser]
 	queryset = User.objects.all()
 	serializer_class = UserSerializer
@@ -85,6 +44,7 @@ class CatViewSet(viewsets.ModelViewSet):
 	View to show list of Cats using generic API
 	"""
 
+    #only authenticated users are allowed to post, update, delete, and create. Anybody can retrieve
 	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 	queryset = Cat.objects.all()
 	serializer_class = CatSerializer
@@ -94,6 +54,7 @@ class BreedViewSet(viewsets.ModelViewSet):
 	View to show list of Breed using generic API
 	"""
 
+    #only authenticated users are allowed to post, update, delete, and create. Anybody can retrieve
 	permission_classes = [permissions.IsAuthenticatedOrReadOnly,]
 	queryset = Breed.objects.all()
 	serializer_class = BreedSerializer
@@ -103,6 +64,7 @@ class HomeViewSet(viewsets.ModelViewSet):
 	View to show a list of Home using generic API
 	"""
 
+    #only authenticated users are allowed to post, update, delete, and create. Anybody can retrieve
 	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 	queryset = Home.objects.all()
 	serializer_class = HomeSerializer
@@ -111,6 +73,8 @@ class HumanViewSet(viewsets.ModelViewSet):
 	"""
 	View to show list of Human using generic API
 	"""
+
+    #only authenticated users are allowed to post, update, delete, and create. Anybody can retrieve
 	permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 	queryset = Human.objects.all()
 	serializer_class = HumanSerializer
