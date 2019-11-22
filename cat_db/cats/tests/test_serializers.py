@@ -13,7 +13,7 @@ from cats.factories import HumanWithCats, BreedFactory, HumanFactory, CatFactory
 
 class TestHomeModel(APITestCase):
     """
-    Defines tests for the Home Model
+    Defines tests for validation of requests using APIClient
     """
     def setUp(self):
         #self.client.create_superuser('admin', 'admin@example', 'testing321')

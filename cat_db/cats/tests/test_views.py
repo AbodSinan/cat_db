@@ -345,6 +345,7 @@ class UserRelationsTest(APITestCase):
         self.user = User.objects.create_superuser(name, email, password)
 
     def test_user_contain_all(self):
+        
         home = HomeFactory(user = self.user)
         breed = BreedFactory(user = self.user)
         human = HumanFactory(user = self.user)
