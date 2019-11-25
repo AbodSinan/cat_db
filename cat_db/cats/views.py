@@ -14,7 +14,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework import status
 
 from cats.models import Cat, Home, Human, Breed
-from cats.serializers import CatSerializer, HumanSerializer, HomeSerializer, BreedSerializer, UserSerializer, UserSigninSerializer
+from cats.serializers import CatSerializer, HumanSerializer, HomeSerializer, BreedSerializer, UserSerializer
 from cats.authentication import expires_in
 
 #A root page that directs the user to different views
