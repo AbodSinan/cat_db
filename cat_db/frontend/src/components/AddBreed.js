@@ -1,6 +1,16 @@
 import React, { Component } from "react";
 
 class AddBreed extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      id_text = null,
+      name_text = "",
+      origin_text = "",
+      description = ""
+    }
+  }
+
   render() {
     return (
       <form
@@ -23,7 +33,13 @@ class AddBreed extends Component {
                 name="ID"
                 className="form-control"
                 type="number"
-                value=""
+                value= {this.props.id_text}
+                onChange = {e => {
+                  this.setState({ id_text: e.target.value });
+                  this.value = this.state.id_text;
+                }
+              }
+
               />
             </div>
           </div>
@@ -43,7 +59,7 @@ class AddBreed extends Component {
                 name="name"
                 className="form-control"
                 type="text"
-                value=""
+                value={this.props.name_text}
                 placeholder="Name"
               ></input>
             </div>
@@ -56,7 +72,7 @@ class AddBreed extends Component {
                 name="origin"
                 className="form-control"
                 type="text"
-                value=""
+                value={this.props.origin_text}
                 placeholder="Origin"
               ></input>
             </div>
@@ -69,6 +85,7 @@ class AddBreed extends Component {
                 placeholder="Describe your Breed"
                 name="description"
                 className="form-control"
+                value = {this.props.description}
               ></textarea>
             </div>
           </div>
