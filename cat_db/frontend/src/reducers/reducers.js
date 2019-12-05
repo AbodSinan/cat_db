@@ -1,88 +1,58 @@
-import { ADD_BREED, ADD_HOME, ADD_CAT, ADD_HUMAN } from "../actions/actions";
+import {
+  ADD_BREED,
+  ADD_HOME,
+  ADD_CAT,
+  ADD_HUMAN,
+  TRIGGER_MODAL,
+  FETCH_BREEDS
+} from "../actions/types";
 
 const initialState = {
-    states = [
-        breeds = [],
-        cats = [],
-        humans = [],
-        homes = []
-    ]
-
+  modalIsOn: false,
+  breeds: [],
+  cats: [],
+  humans: [],
+  homes: []
 };
 
-function rootReducer(state = initialState, action){
-    switch(action.type) {
-        case ADD_BREED:
-            return {
-                ...states,
-                breeds :
-                [
-                    ...state.breeds,
-                    {
-                        ID: action.ID,
-                        origin: action.origin,
-                        description: action.description,
-                        name: action.name,
-                        user: action.user
-                    }
-                ] 
-            };
-            
-        case ADD_HOME:
-            return{
-                ...states,
-                homes : 
-                [
-                    ...state.homes,
-                    {
-                    ID: action.ID,
-                    name: action.name,
-                    address: action.address,
-                    home_type: action.home_type,
-                    user: action.user
-                    }
-                ]
-            };
-            case ADD_HUMAN:
-                    return{
-                        ...states,
-                        humans : 
-                        [
-                            ...state.humans,
-                            {
-                                ID: action.ID,
-                                name: action.name,
-                                date_of_birth: action.date_of_birth,
-                                gender: action.gender,
-                                description: action.description,
-                                home: action.home,
-                                user: action.user
-                            }
-                        ]
-                    };
-            case ADD_CAT:
-                return{
-                    ...states,
-                    cats:
-                    [
-                        ...state.cats,
-                        {
-                            ID: action.ID,
-                            name: action.name,
-                            breed: action.breed,
-                            owner: action.owner,
-                            date_of_birth: action.date_of_birth,
-                            description: action.description,
-                            user: action.user  
-                        }
-                    ]
-                };
-            default:
-                return state
-    };
+export default function(state = initialState, action) {
+  console.log("reached reducer with type of" + action.type);
+  switch (action.type) {
+    case ADD_BREED:
+      return {
+        ...state,
+        breeds: [...state.breeds, action.payload]
+      };
 
-    
+    case ADD_HOME:
+      return {
+        ...state,
+        homes: [...state.homes, action.payload]
+      };
+    case ADD_HUMAN:
+      return {
+        ...state,
+        humans: [...state.humans, action.payload]
+      };
+    case ADD_CAT:
+      return {
+        ...state,
+        cats: [...state.cats, action.payload]
+      };
+    case FETCH_BREEDS:
+      console.log("reached update reducer");
+      return {
+        ...state,
+        breeds: action.payload
+      };
 
+    case TRIGGER_MODAL:
+      return {
+        ...state,
+        modalIsOn: action.payload
+      };
+    default:
+      console.log("returning default state");
+      return state;
+  }
 }
-
-export default rootReducer;
